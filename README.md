@@ -1,4 +1,4 @@
-# aicore_test — SAP AI Core Orchestration 호출 샘플
+# sap_aicore — SAP AI Core Orchestration 호출 샘플
 
 SAP AI Core 의 Generative AI Hub **Orchestration** 기능으로 만든 tenant-level 템플릿(`news-sentiment-classifier`)을 Python 에서 호출해, `news_data.json` 의 뉴스들을 분류하는 최소 샘플.
 
