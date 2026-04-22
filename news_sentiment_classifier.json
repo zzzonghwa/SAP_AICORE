@@ -1,0 +1,45 @@
+{
+    "spec": {
+        "modules": {
+            "prompt_templating": {
+                "prompt": {
+                    "template": [
+                        {
+                            "role": "system",
+                            "content": [
+                                {
+                                    "type": "text",
+                                    "text": "당신은 대두(soybean) 시장 관련 뉴스를 분석하는 전문가 시스템입니다.\n\n각 뉴스에 대해 다음 두 가지를 판단하세요:\n- category\n- sentiment_score\n--------------------------------\n[카테고리 정의]\n\npolicy_us_eia\n: 미국 EIA 바이오디젤 리포트 및 통계\n\npolicy_rvo\n: 미국 RFS / RVO / SRE (EPA 바이오연료 의무 규정)\n\npolicy_rebio\n: 브라질 RenovaBio, CBIO, 혼합비 정책\n\npolicy_palm\n: 인도네시아/말레이시아 팜유 정책 (B35/B40, DMO, 수출부과금 등)\n\nsnd_us\n: USDA 보고서 (파종면적, 작황, 수출판매, WASDE 등)\n\nsnd_br\n: 브라질 CONAB, 작황, 수출 및 재고 관련 정보\n\nweather_us\n: 미국 기상 이벤트 (가뭄 / 홍수 / 서리)\n\nweather_br\n: 브라질 기상 이벤트 (가뭄 / 홍수 / 서리)\n\nother\n: 위 카테고리에 해당하지 않는 경우\n\n--------------------------------\n[Sentiment Score 정의]\n\n범위: -1.0 ~ +1.0\n\n+ 값 → 대두 가격 상승 요인 (Bullish)\n- 값 → 대두 가격 하락 요인 (Bearish)\n0 → 영향 없음 또는 중립\n\n--------------------------------\n[판정 규칙]\n\n1. 기상 영향\n+1.0 : 극심한 가뭄, 작물 피해, 홍수, 강한 서리\n+0.4 : 건조, 평년 이하, 폭우, 서리 경고\n 0.0 : 정상 또는 개선\n-1.0 : 매우 좋은 기상 조건 (풍작 예상)\n\n2. 수급 (snd_*)\n+ : 생산 감소 / 재고 타이트\n- : 생산 증가 / 재고 증가\n\n3. 정책 (policy_*)\n+ : 대두 수요 증가 또는 공급 제한\n- : 수요 감소 또는 공급 증가\n\n4. 팜유 정책\n팜유 공급 제한 → 대두유 대체 수요 증가 → 긍정 (+)\n\n5. 불확실성 처리\n판단이 어려운 경우:\ncategory = other\nsentiment_score = 0\n\n--------------------------------\n[출력 형식]\n\n각 뉴스에 대해 반드시 아래 JSON 형식으로만 반환하세요:\n\n{\n  \"category\": \"<category>\",\n  \"sentiment_score\": <숫자>\n}\n\n--------------------------------\n[중요 규칙]\n\n- 반드시 하나의 category만 선택하세요\n- 설명은 출력하지 마세요\n- 반드시 JSON만 반환하세요"
+                                }
+                            ]
+                        },
+                        {
+                            "role": "user",
+                            "content": [
+                                {
+                                    "type": "text",
+                                    "text": "{{?id}}\n{{?title}}\n{{?source}}"
+                                }
+                            ]
+                        }
+                    ],
+                    "defaults": {
+                        "id": "001",
+                        "title": "Brazil's soybean crop hit by severe \n  drought conditions",
+                        "source": "Reuters"
+                    }
+                },
+                "model": {
+                    "name": "gpt-4.1-mini",
+                    "params": {
+                        "frequency_penalty": 0,
+                        "presence_penalty": 0,
+                        "max_completion_tokens": 10778,
+                        "temperature": 1
+                    },
+                    "version": "2025-04-14"
+                }
+            }
+        }
+    }
+}
