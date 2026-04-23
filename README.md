@@ -8,13 +8,15 @@ SAP AI Core 의 Generative AI Hub **Orchestration** 기능으로 만든 tenant-l
 
 | 파일 | 역할 |
 |---|---|
-| `main.py` | `analyze_news(news)` — 템플릿 JSON 로드 + API body 변환 + `/completion` raw POST |
-| `run_batch.py` | `news_data.json` 의 뉴스 전체를 순회 호출, 결과를 `test_results.json` 에 저장 |
-| `news_sentiment_classifier.json` | AI Launchpad UI 에서 export 한 Orchestration Configuration 스냅샷 |
+| `main.py` | **(legacy)** `analyze_news(news)` — 템플릿 JSON 로드 + API body 변환 + `/completion` raw POST |
+| `run_batch.py` | **(legacy)** `news_data.json` 의 뉴스 전체를 순회 호출, 결과를 `test_results.json` 에 저장 |
+| `main_v2.py` | **(권장)** `analyze_news_v2(news)` — Launchpad configuration 을 ID/name 로 직접 참조 (orchestration_v2) |
+| `run_batch_v2.py` | **(권장)** `main_v2` 기반 배치 러너, 결과를 `test_results_v2.json` 에 저장 |
+| `news_sentiment_classifier.json` | AI Launchpad UI 에서 export 한 Orchestration Configuration 스냅샷 (legacy 용) |
 | `news_data.json` | 테스트 입력 (id / title / source 5건) |
-| `.env` | AI Core credential + `DEPLOYMENT_ID` |
-| `requirements.txt` | 의존성 선언 (`generative-ai-hub-sdk`, `python-dotenv`, `httpx`) |
-| `requirements.lock` | 해시 pin 된 resolved 버전 (install 시 사용) |
+| `.env` | AI Core credential + `DEPLOYMENT_ID` + Orchestration config 참조 |
+| `requirements.txt` | 의존성 선언 (`sap-ai-sdk-gen>=6.1.2`, `python-dotenv`, `httpx`) |
+| `requirements.lock` | 해시 pin 된 resolved 버전 (legacy — v2 전환 후 재생성 필요) |
 
 `run_batch.py` 실행 시 `test_results.json` 이 생성됩니다.
 
@@ -46,21 +48,43 @@ DEPLOYMENT_ID=<orchestration deployment id>  # scenario=orchestration, RUNNING
 Deployment ID 는 AI Launchpad **ML Operations → Deployments** 에서 scenario 가 `orchestration` 인 RUNNING 항목에서 확인.
 
 ### 3. 실행
+
+**권장 (v2 — Launchpad configuration 직접 참조):**
+```bash
+python run_batch_v2.py
+```
+- 로컬 JSON 파일 불필요, Launchpad 에서 수정 즉시 반영 (publish 후).
+- 결과는 `test_results_v2.json`.
+- `.env` 에 `ORCHESTRATION_CONFIG_ID` (권장) 또는 `ORCHESTRATION_CONFIG_NAME/SCENARIO/VERSION` 필요.
+
+**Legacy (v1 — 로컬 JSON 스냅샷 inline 호출):**
 ```bash
 python run_batch.py
 ```
+결과는 `test_results.json`.
 
-결과:
+결과 예시:
 ```
 로드된 뉴스: 5개
 [1/5] id=001 title=Brazil's soybean crop hit by severe drought conditions
 응답: {"category": "weather_br", "sentiment_score": 1.0}
 ...
 완료: 성공 5개 / 실패 0개 / 전체 5개
-결과 저장: /.../test_results.json
 ```
 
-`test_results.json` 에 입력 · 응답 · usage 가 함께 저장된다.
+## v1 vs v2 — 언제 무엇을 쓸까
+
+| 상황 | 권장 |
+|---|---|
+| Launchpad 에서 template 을 자주 수정함 | **v2** — 드리프트 없음 |
+| Template 을 git 으로 버전 관리하고 싶음 | v1 — JSON 스냅샷이 git 에 남음 |
+| Config ID 가 운영 환경에서 고정 | **v2 + ORCHESTRATION_CONFIG_ID** |
+| SDK 를 업그레이드할 수 없음 (sap-ai-sdk-gen<6.1.2) | v1 |
+
+v2 경로의 흔한 에러 `Unused parameters: [...]` 는 코드 버그가 아닌 **Launchpad 상태 문제**인 경우가 대부분:
+1. 템플릿 본문에 `{{?key}}` 가 실제로 쓰이고 있는지
+2. Launchpad draft 가 publish 되어 실행 버전에 반영됐는지
+3. 실행 중인 `name/scenario/version` 이 수정본과 일치하는지
 
 ## 다른 UI 템플릿으로 교체하려면
 
